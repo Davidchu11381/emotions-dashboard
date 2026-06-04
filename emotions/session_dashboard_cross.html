@@ -30,6 +30,11 @@
  table.cmp td:hover { outline:2px solid var(--ink); outline-offset:-2px; }
  td.ok { background:#d6f5dd; } td.no { background:#fbdad8; } td.mid { background:#fdedd2; }
  .leg { font-size:13px; margin-top:10px; line-height:1.7; background:#fff; border:3px solid var(--ink); padding:12px 14px; }
+ .keyfind { background:var(--acc); border:5px solid var(--ink); box-shadow:10px 10px 0 var(--ink); padding:18px 20px; margin:0 0 26px; }
+ .kf-h { font-family:"Arial Black",system-ui,sans-serif; font-weight:900; text-transform:uppercase; font-size:20px; letter-spacing:-.5px; margin:0 0 8px; }
+ .kf-bl { margin:0 0 10px; font-size:15px; font-weight:600; }
+ .kf-list { margin:0; padding-left:22px; }
+ .kf-list li { margin:6px 0; font-size:14.5px; line-height:1.45; }
  .tip { font-size:13px; font-weight:700; margin:8px 0 0; }
  .k { font-weight:900; padding:1px 6px; border:2px solid var(--ink); }
  .k.ok { background:#d6f5dd; } .k.no { background:#fbdad8; } .k.mid { background:#fdedd2; }
@@ -66,6 +71,18 @@
   tests, so this page compares <b>results only</b>. Verdicts: <span class="k ok">green</span> = matches the paper ·
   <span class="k mid">amber</span> = partly · <span class="k no">red</span> = no. Every number is the model's own;
   per-model method details live on each model's page.</p>
+</div>
+
+<div class="keyfind">
+  <div class="kf-h">&#9733; Key findings — across all 8 models</div>
+  <p class="kf-bl"><b>Bottom line:</b> the way these models <i>represent</i> emotions replicates broadly; the weak, model-specific part is reading an emotion off a <i>single token</i>.</p>
+  <ul class="kf-list">
+    <li><b>Emotions form a human-like map on every model.</b> The biggest axis is always valence (unpleasant↔pleasant), matching human ratings on 8/8 (r&nbsp;0.70–0.78, <b>Fig&nbsp;7–8</b>).</li>
+    <li><b>The reply's emotion is set before the model speaks.</b> Readable at the Assistant '<code>:</code>' on all 8; it clearly beats the user's own words on only 2/8 (<b>Fig&nbsp;11</b>).</li>
+    <li><b>Emotion is tracked per speaker, not per name-tag</b> — on all 8/8: relabel Human / Assistant / Person&nbsp;1 / 2 and the vector barely moves (<b>Fig&nbsp;19</b>).</li>
+    <li><b>The geometry transfers; the single-token readout does not.</b> Reading an emotion off one word is weaker and model-dependent (scenario 5/8; user-vs-reply 0/8); averaging over the passage recovers it (<b>Fig&nbsp;2 / 10</b>).</li>
+    <li><b>Differences track family, not size.</b> Only Llama puts the calm↔excited axis at #2; Gemma fails single-word readouts; a 4B edge model is as clean as a 70B. None matches Claude across the board (Llama is closest on representation).</li>
+  </ul>
 </div>
 
 <h2>1 · What holds up across (almost) every model</h2>
