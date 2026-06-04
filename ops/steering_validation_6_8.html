@@ -37,7 +37,9 @@ details{margin-top:10px}summary{font-weight:900;text-transform:uppercase;font-si
 .prompt .r{color:#8e44ad;font-weight:800}
 .imgs img{cursor:zoom-in}
 #maglens{position:fixed;width:440px;height:360px;border:4px solid #0a0a0a;box-shadow:7px 7px 0 #d6332e;background-repeat:no-repeat;background-color:#fff;pointer-events:none;z-index:9999;display:none}
-#maglens .zlabel{position:absolute;top:0;left:0;background:#0a0a0a;color:#ffd23f;font:800 9px/1.4 system-ui;text-transform:uppercase;padding:1px 6px;letter-spacing:1px}
+#maglens .zlabel{position:absolute;top:0;left:0;background:#0a0a0a;color:#ffd23f;font:800 9px/1.4 system-ui;text-transform:uppercase;padding:1px 6px;letter-spacing:1px;z-index:2}
+#maglens .xhair{position:absolute;left:50%;top:50%;width:30px;height:30px;margin:-15px 0 0 -15px;border:2.5px solid #d6332e;border-radius:50%;box-shadow:0 0 0 1.5px #fff,inset 0 0 0 1.5px #fff;pointer-events:none}
+#maglens .xhair:before{content:"";position:absolute;left:50%;top:50%;width:3px;height:3px;margin:-1.5px 0 0 -1.5px;background:#d6332e;border-radius:50%;box-shadow:0 0 0 1px #fff}
 .maghint{display:inline-block;font:800 10px/1 system-ui;text-transform:uppercase;color:#fff;background:#8e44ad;border:2px solid #0a0a0a;padding:3px 7px;margin:6px 0 0}
 </style></head>
 <body><div class="wrap">
@@ -45,7 +47,7 @@ details{margin-top:10px}summary{font-weight:900;text-transform:uppercase;font-si
   <h1>Steering Validation · §6.8–6.10</h1>
   <p class="sub">Replicating Sofroniew et al. steering experiments on gemma-4-31b &amp; llama-3.3-70b: <b>§6.8</b> emotional content of continuations (single layer) + <b>§6.9/6.10</b> activity-preference steering (mid-layer band).</p>
   <p class="sub" style="font-weight:600">A sub-report of the Jaz experiment dashboard. Does adding an emotion vector make the model say / feel that emotion, and shift what it prefers?</p>
-  <p style="margin:9px 0 0"><span class="maghint">🔍 Hover any plot to magnify 3×</span></p>
+  <p style="margin:9px 0 0"><span class="maghint">🔍 Hover any plot — 3× loupe centers on your cursor (red reticle = exact point)</span></p>
 </div>
 <div class="meth">
   <h3>Method (paper-verbatim)</h3>
@@ -109,20 +111,19 @@ function showProbe(btn,id){
 }
 (function(){
   var ZOOM=3.0, lens=document.createElement('div'); lens.id='maglens';
-  lens.innerHTML='<span class="zlabel">3× zoom</span>';
+  lens.innerHTML='<span class="zlabel">3× zoom</span><div class="xhair"></div>';
   document.body.appendChild(lens);
   function move(e){
     var img=e.currentTarget, r=img.getBoundingClientRect();
     var x=e.clientX-r.left, y=e.clientY-r.top;
     lens.style.display='block';
+    var lw=lens.offsetWidth, lh=lens.offsetHeight;   // fixed 440x360 from CSS
     lens.style.backgroundImage='url("'+img.src+'")';
     lens.style.backgroundSize=(r.width*ZOOM)+'px '+(r.height*ZOOM)+'px';
-    lens.style.backgroundPosition=(-(x*ZOOM-lens.offsetWidth/2))+'px '+(-(y*ZOOM-lens.offsetHeight/2))+'px';
-    var lw=lens.offsetWidth, lh=lens.offsetHeight, pad=24;
-    var lx=e.clientX+pad; if(lx+lw>window.innerWidth){ lx=e.clientX-pad-lw; }
-    var ly=e.clientY+pad; if(ly+lh>window.innerHeight){ ly=window.innerHeight-lh-6; }
-    if(ly<6){ ly=6; } if(lx<6){ lx=6; }
-    lens.style.left=lx+'px'; lens.style.top=ly+'px';
+    // put the hovered point (x,y) at the CENTRE of the box -> right under the reticle/cursor
+    lens.style.backgroundPosition=(-(x*ZOOM-lw/2))+'px '+(-(y*ZOOM-lh/2))+'px';
+    lens.style.left=(e.clientX-lw/2)+'px';
+    lens.style.top=(e.clientY-lh/2)+'px';
   }
   function hide(){ lens.style.display='none'; }
   function attach(){
