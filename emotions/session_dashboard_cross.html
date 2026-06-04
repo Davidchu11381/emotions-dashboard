@@ -75,14 +75,15 @@
 
 <div class="keyfind">
   <div class="kf-h">&#9733; Key findings — across all 8 models</div>
-  <p class="kf-bl"><b>Bottom line:</b> the way these models <i>represent</i> emotions replicates broadly; the weak, model-specific part is reading an emotion off a <i>single token</i>.</p>
+  <p class="kf-bl"><b>Bottom line:</b> the way these models <i>represent</i> emotions replicates broadly; the weak, model-specific part is reading an emotion from a <i>single word</i> instead of averaging over the whole passage.</p>
+  <p class="kf-bl"><b>vs Claude:</b> the representation geometry is about as clean as the paper's Claude; what is clearly weaker is reading the emotion from a single word — user-vs-reply emotion fails on all 8, and the ':' beats the user's word on only 2/8.</p>
   <ul class="kf-list">
     <li><b>Emotions form a human-like map on every model.</b> The top axis is always valence (unpleasant↔pleasant), matching human ratings on 8/8 (r&nbsp;0.70–0.78); similar emotions cluster, opposites point apart (<b>Fig&nbsp;5–8</b>).</li>
     <li><b>The reply's emotion is set before the model speaks.</b> Readable at the Assistant '<code>:</code>' on all 8; it clearly beats the user's own words on only 2/8 (<b>Fig&nbsp;11</b>).</li>
     <li><b>Emotion is tracked per speaker, not per name-tag</b> — on all 8/8: relabel Human / Assistant / Person&nbsp;1 / 2 and the vector barely moves (<b>Fig&nbsp;19</b>).</li>
     <li><b>Each vector points at on-theme words, in many languages</b> — afraid → fear, 恐惧, страх — on all 8 (<b>Table&nbsp;1</b>, logit lens).</li>
-    <li><b>The geometry transfers; the single-token readout does not.</b> Reading an emotion off one word is weaker and model-dependent (scenario 5/8; user-vs-reply 0/8); averaging over the passage recovers it (<b>Fig&nbsp;2 / 10</b>).</li>
-    <li><b>Differences track family, not size.</b> Only Llama puts the calm↔excited axis at #2; Gemma fails single-word readouts; a 4B edge model is as clean as a 70B. None matches Claude across the board (Llama is closest on representation).</li>
+    <li><b>The geometry transfers; reading it from one word does not.</b> Reading an emotion from a single word is weaker and model-dependent (scenario 5/8; user-vs-reply 0/8); averaging over the whole passage recovers it (<b>Fig&nbsp;2 / 10</b>).</li>
+    <li><b>Differences track family, not size.</b> Only Llama puts the calm↔excited axis at #2; Gemma can't read it from a single word; a 4B edge model is as clean as a 70B. None matches Claude across the board (Llama is closest on representation).</li>
   </ul>
 </div>
 
@@ -112,16 +113,16 @@
 <h2>3 · By family, and vs Claude</h2>
 <ul class="big">
   <li><b>Llama (3.1-8B / 3.1-70B / 3.3-70B) — most paper-faithful.</b> The only family with arousal on PC2, the cleanest
-      single-word readout, and the most legible (untied) logit lens. 3.1-70B and 3.3-70B are near-identical <b>fine-tune twins</b> (vectors ~0.99 cosine).</li>
-  <li><b>Qwen (3-8B / 3-32B) — readouts work, one quirk.</b> Single-word Fig&nbsp;2 is clean and arousal sits on a deeper axis.
+      single-word read, and the most legible (untied) logit lens. 3.1-70B and 3.3-70B are near-identical <b>fine-tune twins</b> (vectors ~0.99 cosine).</li>
+  <li><b>Qwen (3-8B / 3-32B) — single-word reads work, one quirk.</b> Single-word Fig&nbsp;2 is clean and arousal sits on a deeper axis.
       <b>Qwen3-32B is the only model where the ':' edge over the user disappears.</b></li>
-  <li><b>Gemma (4-31B / E4B / 26B-A4B) — strong geometry, weak single-word readouts.</b> Fig&nbsp;2 fails (0–2/12), arousal on a
+  <li><b>Gemma (4-31B / E4B / 26B-A4B) — strong geometry, weak single-word reads.</b> Fig&nbsp;2 fails (0–2/12), arousal on a
       deep PC4; dense, edge, and MoE are indistinguishable, so family beats both architecture and size.</li>
-  <li><b>vs Claude:</b> Claude shows the full set — clean geometry <i>and</i> the single-word readouts. None of the 8 open models
-      matches it across the board; <b>Llama is closest</b> (geometry), and all trail on the single-token readout.</li>
+  <li><b>vs Claude:</b> Claude shows the full set — clean geometry <i>and</i> the single-word reads. None of the 8 open models
+      matches it across the board; <b>Llama is closest</b> (geometry), and all trail on reading the emotion from one word.</li>
 </ul>
 <p class="caveat"><b>Fair-comparison note.</b> The paper studied <b>Claude</b> (a large frontier model, internal evals); we use
-  <b>8 open-weight models</b>, public data, and a simpler single-token readout — so the gaps most likely reflect <b>scale and
+  <b>8 open-weight models</b>, public data, and we read the emotion at a single word rather than averaging over the passage — so the gaps most likely reflect <b>scale and
   method</b>, not a flaw in the paper. (Human-norm benchmark: Claude's own 1–7 ratings match published human valence/arousal
   norms at <b>0.93 / 0.91</b>, <b>Fig&nbsp;58</b> — which is why they serve as the human stand-in.)</p>
 </div>
