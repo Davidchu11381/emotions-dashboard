@@ -1,0 +1,17 @@
+# Publish only the rendered dashboard. Never commit pipeline code, data, weights, or secrets.
+*.npz
+*.npy
+*.pt
+*.bin
+*.safetensors
+*.ckpt
+*.jsonl
+*.parquet
+*.csv
+*.log
+__pycache__/
+.venv/
+env/
+.secrets/
+.DS_Store
+*.ipynb

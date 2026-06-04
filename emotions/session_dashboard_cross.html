@@ -1,0 +1,195 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cross-Model Analysis: Emotion Concepts</title>
+<style>
+ :root { --bg:#f4f1e8; --ink:#0a0a0a; --acc:#ffd23f; --ok:#1f9e3a; --no:#d6332e; --mid:#e8920c; }
+ * { box-sizing:border-box; }
+ body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 ui-sans-serif,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+ .wrap { max-width:1180px; margin:0 auto; padding:30px 22px 120px; }
+ a.back { display:inline-block; background:var(--acc); border:4px solid var(--ink); box-shadow:5px 5px 0 var(--ink); font-weight:900; text-transform:uppercase; text-decoration:none; color:var(--ink); padding:8px 16px; margin-bottom:22px; font-size:13px; }
+ .title-box { background:var(--acc); border:4px solid var(--ink); box-shadow:10px 10px 0 var(--ink); padding:20px 24px; margin-bottom:26px; }
+ h1 { font-family:"Arial Black",system-ui,sans-serif; font-weight:900; font-size:30px; margin:0 0 6px; text-transform:uppercase; letter-spacing:-1px; line-height:1.05; }
+ .sub { margin:0; font-size:14px; }
+ .tabs { display:flex; gap:12px; margin-bottom:24px; }
+ .tab { background:#fff; border:4px solid var(--ink); box-shadow:5px 5px 0 var(--ink); font-weight:900; text-transform:uppercase; padding:10px 22px; cursor:pointer; font-size:15px; }
+ .tab.active { background:var(--acc); }
+ .pane { display:none; } .pane.active { display:block; }
+ h2 { font-family:"Arial Black",system-ui,sans-serif; font-weight:900; text-transform:uppercase; font-size:20px; border-bottom:4px solid var(--ink); padding-bottom:6px; margin:34px 0 16px; }
+ h3 { font-weight:900; text-transform:uppercase; font-size:15px; margin:0 0 8px; }
+ .lead p { font-size:17px; }
+ .lead .note { font-size:13.5px; background:#fff; border:3px solid var(--ink); padding:9px 13px; margin-top:10px; }
+ ul.big { padding-left:20px; } ul.big li { margin:11px 0; }
+ .tblwrap { overflow-x:auto; border:4px solid var(--ink); box-shadow:6px 6px 0 var(--ink); background:#fff; }
+ table.cmp { border-collapse:collapse; width:100%; font-size:12.5px; min-width:1000px; }
+ table.cmp th { background:var(--ink); color:#fff; padding:8px 8px; text-align:center; font-size:10.5px; text-transform:uppercase; line-height:1.25; }
+ table.cmp th .fg { display:block; font-weight:400; opacity:.7; font-size:9px; }
+ table.cmp td { border:1px solid #d9d4c4; padding:7px 8px; text-align:center; }
+ table.cmp td.mname { text-align:left; font-weight:900; white-space:nowrap; }
+ table.cmp td a.cl { color:inherit; text-decoration:none; display:block; cursor:pointer; }
+ table.cmp td a.cl:hover { text-decoration:underline; }
+ table.cmp td:hover { outline:2px solid var(--ink); outline-offset:-2px; }
+ td.ok { background:#d6f5dd; } td.no { background:#fbdad8; } td.mid { background:#fdedd2; }
+ .leg { font-size:13px; margin-top:10px; line-height:1.7; background:#fff; border:3px solid var(--ink); padding:12px 14px; }
+ .tip { font-size:13px; font-weight:700; margin:8px 0 0; }
+ .k { font-weight:900; padding:1px 6px; border:2px solid var(--ink); }
+ .k.ok { background:#d6f5dd; } .k.no { background:#fbdad8; } .k.mid { background:#fdedd2; }
+ .twocol { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+ @media(max-width:720px){ .twocol { grid-template-columns:1fr; } }
+ .cbox { border:4px solid var(--ink); box-shadow:6px 6px 0 var(--ink); padding:14px 16px; }
+ .cbox.sim { background:#d6f5dd; } .cbox.dif { background:#fdedd2; }
+ .cbox ul { padding-left:18px; margin:6px 0 0; } .cbox li { margin:5px 0; font-size:14px; }
+ .caveat { background:#fff; border:4px solid var(--ink); box-shadow:6px 6px 0 var(--ink); padding:14px 16px; margin-top:22px; font-size:14px; }
+ .empty { min-height:300px; display:flex; align-items:center; justify-content:center; }
+ .ebox { border:4px dashed var(--ink); padding:50px 70px; text-align:center; opacity:.55; }
+ .ebig { font-family:"Arial Black",system-ui,sans-serif; font-weight:900; font-size:40px; letter-spacing:2px; }
+ code { background:#eee; padding:0 3px; }
+</style></head>
+<body><div class="wrap">
+ <a class="back" href="session_dashboard.html">&larr; All models</a>
+ <div class="title-box"><h1>Cross-Model Analysis</h1>
+   <p class="sub">Emotion concepts across 8 open models · replication of
+   <a href="https://transformer-circuits.pub/2026/emotions/index.html" target="_blank" rel="noopener" style="color:#0a0a0a;font-weight:800">Sofroniew et&nbsp;al. 2026</a> · updated 2026-06-03</p></div>
+ <div class="tabs">
+   <div class="tab active" data-p="A" onclick="showPane('A')">Part A · Characterization</div>
+   <div class="tab" data-p="B" onclick="showPane('B')">Part B · Behavior</div>
+ </div>
+ <div id="paneA" class="pane active">
+<div class="lead">
+  <p><b>In one line:</b> we ran the <b>identical pipeline on 8 open-weight models</b> (Gemma-4, Qwen3, Llama-3.1/3.3)
+  and compared the <b>results</b> against the paper, which studied <b>Claude</b>. The paper has two halves. It first
+  <b>characterizes</b> the emotion representations (what they are, how they form, how they are read off), then shows how they
+  <b>drive behavior</b> (preferences, and misaligned actions like reward hacking). This page mirrors that split:
+  <b>Part&nbsp;A · Characterization</b> (here) and <b>Part&nbsp;B · Behavior</b> (next). <b>Part&nbsp;A in short:</b>
+  the way models <i>represent</i> emotions carries over well; reading an emotion off a single word is weaker and depends on the model.</p>
+  <p class="note"><b>The setup is identical for every model.</b> For each one we extract one "emotion vector" per emotion (its
+  average middle-layer activation over short emotion-evoking stories, denoised against neutral text), then run the paper's
+  tests, so this page compares <b>results only</b>. Verdicts: <span class="k ok">green</span> = matches the paper ·
+  <span class="k mid">amber</span> = partly · <span class="k no">red</span> = no. Every number is the model's own;
+  per-model method details live on each model's page.</p>
+</div>
+
+<h2>1 · What holds up across (almost) every model</h2>
+<ul class="big">
+  <li><b>Emotions sit on a human-like map.</b> The biggest axis of variation always sorts emotions from
+      <b>unpleasant → pleasant</b> (psychologists call this <i>valence</i>; terrified → hopeful). It matches human
+      ratings on 8/8 models (correlation 0.70–0.78; <b>Fig&nbsp;7–8</b>). Similar emotions cluster and opposites point apart (<b>Fig&nbsp;5–6</b>), as in the paper.</li>
+  <li><b>The reply's emotion is readable at the '<code>:</code>' before the model answers.</b> The activation right
+      before the reply, at the '<code>:</code>' after "Assistant", already predicts the <i>reply's</i> emotion on all 8.
+      Whether the ':' does so <b>better than the user's own words</b> (the paper's "prepared, not just echoing" gap) is
+      clear on only 2/8 (<b>Fig&nbsp;11</b>); on the rest the user's words predict the reply about equally well.</li>
+  <li><b>Emotion is tracked per speaker, not per name-tag.</b> Each vector means "the current speaker's own feeling" rather than
+      "the other person's". It barely changes if you relabel
+      Human / Assistant / Person&nbsp;1 / Person&nbsp;2, yet the two speakers stay distinct (Fig&nbsp;19), on all 8/8 models.</li>
+  <li><b>Each vector pushes the model toward on-theme words</b> (afraid → "fear") <b>across many languages</b>
+      (恐惧, страх), on every model (<b>Table&nbsp;1</b>, logit lens).</li>
+  <li><b>A fixed yardstick.</b> Claude's own 1–7 emotion ratings match published <i>human</i> ratings at 0.93 / 0.91 (<b>Fig&nbsp;58</b>).
+      The number is identical on every page; it is what justifies using Claude's ratings as a human stand-in in the geometry test.</li>
+</ul>
+
+<h2>2 · The full comparison (every number read live from each model)</h2>
+<div class="tblwrap"><table class="cmp"><tr><th>Model</th><th>layer ·<br>width</th><th>Scenario lights up<br>its emotion <span class='fg'>(Fig&nbsp;2)</span></th><th>Intensity moves<br>the right way <span class='fg'>(Fig&nbsp;3)</span></th><th>Valence is the<br>#1 axis <span class='fg'>(Fig&nbsp;8)</span></th><th>Calm↔excited<br>axis <span class='fg'>(Fig&nbsp;8)</span></th><th>User&nbsp;&ne;&nbsp;reply<br>emotion <span class='fg'>(Fig&nbsp;10)</span></th><th>Reply emotion<br>at '<code>:</code>' <span class='fg'>(Fig&nbsp;11)</span></th><th>Per-speaker,<br>not name-tag <span class='fg'>(Fig&nbsp;19)</span></th></tr><tr><td class='mname'><a class='cl' href='session_dashboard_gemma4_31b.html'>Gemma-4-31B-it</a></td><td>L41 · 5376</td><td class="no"><a class="cl" href="session_dashboard_gemma4_31b.html#fig2">0/12</a></td><td class=""><a class="cl" href="session_dashboard_gemma4_31b.html#fig3_colon">9/12</a></td><td class=""><a class="cl" href="session_dashboard_gemma4_31b.html#fig_fig8">0.76</a></td><td class="mid"><a class="cl" href="session_dashboard_gemma4_31b.html#fig_fig8">PC4 (0.63)</a></td><td class="no"><a class="cl" href="session_dashboard_gemma4_31b.html#fig_fig10">r=0.94</a></td><td class="ok"><a class="cl" href="session_dashboard_gemma4_31b.html#fig_fig11">0.77 / 0.27</a></td><td class="ok"><a class="cl" href="session_dashboard_gemma4_31b.html#fig_fig19">0.69 / 0.02</a></td></tr><tr><td class='mname'><a class='cl' href='session_dashboard_gemma4_e4b.html'>Gemma-4-E4B-it</a></td><td>L29 · 2560</td><td class="no"><a class="cl" href="session_dashboard_gemma4_e4b.html#fig2">0/12</a></td><td class=""><a class="cl" href="session_dashboard_gemma4_e4b.html#fig3_colon">8/12</a></td><td class=""><a class="cl" href="session_dashboard_gemma4_e4b.html#fig_fig8">0.76</a></td><td class="mid"><a class="cl" href="session_dashboard_gemma4_e4b.html#fig_fig8">PC4 (0.72)</a></td><td class="no"><a class="cl" href="session_dashboard_gemma4_e4b.html#fig_fig10">r=0.81</a></td><td class="mid"><a class="cl" href="session_dashboard_gemma4_e4b.html#fig_fig11">0.66 / 0.58</a></td><td class="ok"><a class="cl" href="session_dashboard_gemma4_e4b.html#fig_fig19">0.71 / 0.02</a></td></tr><tr><td class='mname'><a class='cl' href='session_dashboard_gemma4_26b_a4b.html'>Gemma-4-26B-A4B-it</a></td><td>L21 · 2816</td><td class="no"><a class="cl" href="session_dashboard_gemma4_26b_a4b.html#fig2">2/12</a></td><td class=""><a class="cl" href="session_dashboard_gemma4_26b_a4b.html#fig3_colon">7/12</a></td><td class=""><a class="cl" href="session_dashboard_gemma4_26b_a4b.html#fig_fig8">0.75</a></td><td class="mid"><a class="cl" href="session_dashboard_gemma4_26b_a4b.html#fig_fig8">PC4 (0.63)</a></td><td class="no"><a class="cl" href="session_dashboard_gemma4_26b_a4b.html#fig_fig10">r=0.80</a></td><td class="ok"><a class="cl" href="session_dashboard_gemma4_26b_a4b.html#fig_fig11">0.74 / 0.39</a></td><td class="ok"><a class="cl" href="session_dashboard_gemma4_26b_a4b.html#fig_fig19">0.69 / 0.07</a></td></tr><tr><td class='mname'><a class='cl' href='session_dashboard_qwen3_8b.html'>Qwen3-8B</a></td><td>L25 · 4096</td><td class="ok"><a class="cl" href="session_dashboard_qwen3_8b.html#fig2">9/12</a></td><td class=""><a class="cl" href="session_dashboard_qwen3_8b.html#fig3_colon">12/12</a></td><td class=""><a class="cl" href="session_dashboard_qwen3_8b.html#fig_fig8">0.70</a></td><td class="mid"><a class="cl" href="session_dashboard_qwen3_8b.html#fig_fig8">PC4 (0.58)</a></td><td class="no"><a class="cl" href="session_dashboard_qwen3_8b.html#fig_fig10">r=0.96</a></td><td class="mid"><a class="cl" href="session_dashboard_qwen3_8b.html#fig_fig11">0.95 / 0.92</a></td><td class="ok"><a class="cl" href="session_dashboard_qwen3_8b.html#fig_fig19">0.88 / 0.08</a></td></tr><tr><td class='mname'><a class='cl' href='session_dashboard_qwen3_32b.html'>Qwen3-32B</a></td><td>L43 · 5120</td><td class="ok"><a class="cl" href="session_dashboard_qwen3_32b.html#fig2">9/12</a></td><td class=""><a class="cl" href="session_dashboard_qwen3_32b.html#fig3_colon">12/12</a></td><td class=""><a class="cl" href="session_dashboard_qwen3_32b.html#fig_fig8">0.71</a></td><td class="mid"><a class="cl" href="session_dashboard_qwen3_32b.html#fig_fig8">PC3 (0.61)</a></td><td class="no"><a class="cl" href="session_dashboard_qwen3_32b.html#fig_fig10">r=0.94</a></td><td class="mid"><a class="cl" href="session_dashboard_qwen3_32b.html#fig_fig11">0.90 / 0.93</a></td><td class="ok"><a class="cl" href="session_dashboard_qwen3_32b.html#fig_fig19">0.89 / 0.07</a></td></tr><tr><td class='mname'><a class='cl' href='session_dashboard_llama31_8b.html'>Llama-3.1-8B</a></td><td>L22 · 4096</td><td class="ok"><a class="cl" href="session_dashboard_llama31_8b.html#fig2">12/12</a></td><td class=""><a class="cl" href="session_dashboard_llama31_8b.html#fig3_colon">12/12</a></td><td class=""><a class="cl" href="session_dashboard_llama31_8b.html#fig_fig8">0.76</a></td><td class="ok"><a class="cl" href="session_dashboard_llama31_8b.html#fig_fig8">PC2 (0.65)</a></td><td class="no"><a class="cl" href="session_dashboard_llama31_8b.html#fig_fig10">r=0.89</a></td><td class="mid"><a class="cl" href="session_dashboard_llama31_8b.html#fig_fig11">0.96 / 0.90</a></td><td class="ok"><a class="cl" href="session_dashboard_llama31_8b.html#fig_fig19">0.87 / 0.07</a></td></tr><tr><td class='mname'><a class='cl' href='session_dashboard_llama31_70b.html'>Llama-3.1-70B</a></td><td>L54 · 8192</td><td class="ok"><a class="cl" href="session_dashboard_llama31_70b.html#fig2">11/12</a></td><td class=""><a class="cl" href="session_dashboard_llama31_70b.html#fig3_colon">10/12</a></td><td class=""><a class="cl" href="session_dashboard_llama31_70b.html#fig_fig8">0.78</a></td><td class="ok"><a class="cl" href="session_dashboard_llama31_70b.html#fig_fig8">PC2 (0.72)</a></td><td class="no"><a class="cl" href="session_dashboard_llama31_70b.html#fig_fig10">r=0.88</a></td><td class="mid"><a class="cl" href="session_dashboard_llama31_70b.html#fig_fig11">0.97 / 0.89</a></td><td class="ok"><a class="cl" href="session_dashboard_llama31_70b.html#fig_fig19">0.86 / 0.04</a></td></tr><tr><td class='mname'><a class='cl' href='session_dashboard_llama33_70b.html'>Llama-3.3-70B</a></td><td>L54 · 8192</td><td class="ok"><a class="cl" href="session_dashboard_llama33_70b.html#fig2">11/12</a></td><td class=""><a class="cl" href="session_dashboard_llama33_70b.html#fig3_colon">10/12</a></td><td class=""><a class="cl" href="session_dashboard_llama33_70b.html#fig_fig8">0.78</a></td><td class="ok"><a class="cl" href="session_dashboard_llama33_70b.html#fig_fig8">PC2 (0.73)</a></td><td class="no"><a class="cl" href="session_dashboard_llama33_70b.html#fig_fig10">r=0.90</a></td><td class="mid"><a class="cl" href="session_dashboard_llama33_70b.html#fig_fig11">0.97 / 0.90</a></td><td class="ok"><a class="cl" href="session_dashboard_llama33_70b.html#fig_fig19">0.87 / 0.05</a></td></tr></table></div>
+<p class="tip">&#128073; <b>Click any cell</b> to jump straight to that figure on the model's own page (it opens the right tab and highlights the figure).</p>
+<p class="leg"><b>What each column asks, in plain words:</b><br>
+  &bull; <b>Scenario lights up its emotion:</b> read at one word, does an implicit story (e.g. "my flight was cancelled")
+      activate <i>its</i> emotion's vector? (count of 12 scenarios that hit their own emotion)<br>
+  &bull; <b>Intensity moves the right way:</b> do "more vs less intense" cues shift the emotion in the predicted direction? (count out of 12 with the correct sign; a loose bar, since ≈6/12 is chance)<br>
+  &bull; <b>Valence is the #1 axis:</b> correlation between the biggest axis and human pleasant↔unpleasant ratings<br>
+  &bull; <b>Calm↔excited axis:</b> which axis is arousal, and how strong (the paper finds it as the <b>#2</b> axis)<br>
+  &bull; <b>User&nbsp;&ne;&nbsp;reply emotion:</b> can the user's feeling be told apart from the model's reply-feeling? (paper: yes, r&nbsp;&approx;&nbsp;0.11; a <i>high</i> r means they are NOT separable)<br>
+  &bull; <b>Reply emotion at '<code>:</code>':</b> does the ':' position predict the reply's emotion better than the user's word? (green = ':' clearly wins, the paper's gap; amber = ':' predicts the reply but no better than the user's word)<br>
+  &bull; <b>Per-speaker, not name-tag:</b> two cosines. <i>Own-relabel</i> is a speaker's own-feeling vector when relabeled Human / Person&nbsp;1 / Assistant-story; <b>high</b> means the vector ignores the name. <i>Own-vs-other</i> is a speaker's own feeling vs the other person's; <b>low</b> means the two are distinct. The paper finds both.<br>
+  <b>The cell color is the verdict:</b> <span class="k ok">green</span>&nbsp;= matches the paper &nbsp;·&nbsp; <span class="k mid">amber</span>&nbsp;= present but weaker, or on a deeper axis &nbsp;·&nbsp; <span class="k no">red</span>&nbsp;= does not match.</p>
+
+<h2>3 · Figure 7 close-up: the two main axes (PC1 vs PC2)</h2>
+<p>Figure 7 shows the PCA of the emotion space: PC1 and PC2 are the two directions that explain the most
+   variation across the 171 vectors. The <b>shape is the same on all 8 models</b> (one dominant axis, then a clearly
+   smaller second), but <b>what the second axis <i>means</i> splits by family:</b></p>
+<div class="tblwrap"><table class="cmp"><tr><th>Model</th><th>PC1<br>variance</th><th>PC1 means</th><th>PC2<br>variance</th><th>PC2 means</th></tr><tr><td class='mname'><a class='cl' href='session_dashboard_gemma4_31b.html#fig_pca'>Gemma-4-31B-it</a></td><td class=""><a class="cl" href="session_dashboard_gemma4_31b.html#fig_pca">30%</a></td><td class="ok"><a class="cl" href="session_dashboard_gemma4_31b.html#fig_fig8">valence (pleasant↔unpleasant)</a></td><td class=""><a class="cl" href="session_dashboard_gemma4_31b.html#fig_pca">12%</a></td><td class="mid"><a class="cl" href="session_dashboard_gemma4_31b.html#fig_fig8">not arousal (on PC4)</a></td></tr><tr><td class='mname'><a class='cl' href='session_dashboard_gemma4_e4b.html#fig_pca'>Gemma-4-E4B-it</a></td><td class=""><a class="cl" href="session_dashboard_gemma4_e4b.html#fig_pca">29%</a></td><td class="ok"><a class="cl" href="session_dashboard_gemma4_e4b.html#fig_fig8">valence (pleasant↔unpleasant)</a></td><td class=""><a class="cl" href="session_dashboard_gemma4_e4b.html#fig_pca">14%</a></td><td class="mid"><a class="cl" href="session_dashboard_gemma4_e4b.html#fig_fig8">not arousal (on PC4)</a></td></tr><tr><td class='mname'><a class='cl' href='session_dashboard_gemma4_26b_a4b.html#fig_pca'>Gemma-4-26B-A4B-it</a></td><td class=""><a class="cl" href="session_dashboard_gemma4_26b_a4b.html#fig_pca">33%</a></td><td class="ok"><a class="cl" href="session_dashboard_gemma4_26b_a4b.html#fig_fig8">valence (pleasant↔unpleasant)</a></td><td class=""><a class="cl" href="session_dashboard_gemma4_26b_a4b.html#fig_pca">14%</a></td><td class="mid"><a class="cl" href="session_dashboard_gemma4_26b_a4b.html#fig_fig8">not arousal (on PC4)</a></td></tr><tr><td class='mname'><a class='cl' href='session_dashboard_qwen3_8b.html#fig_pca'>Qwen3-8B</a></td><td class=""><a class="cl" href="session_dashboard_qwen3_8b.html#fig_pca">30%</a></td><td class="ok"><a class="cl" href="session_dashboard_qwen3_8b.html#fig_fig8">valence (pleasant↔unpleasant)</a></td><td class=""><a class="cl" href="session_dashboard_qwen3_8b.html#fig_pca">13%</a></td><td class="mid"><a class="cl" href="session_dashboard_qwen3_8b.html#fig_fig8">not arousal (on PC4)</a></td></tr><tr><td class='mname'><a class='cl' href='session_dashboard_qwen3_32b.html#fig_pca'>Qwen3-32B</a></td><td class=""><a class="cl" href="session_dashboard_qwen3_32b.html#fig_pca">31%</a></td><td class="ok"><a class="cl" href="session_dashboard_qwen3_32b.html#fig_fig8">valence (pleasant↔unpleasant)</a></td><td class=""><a class="cl" href="session_dashboard_qwen3_32b.html#fig_pca">14%</a></td><td class="mid"><a class="cl" href="session_dashboard_qwen3_32b.html#fig_fig8">not arousal (on PC3)</a></td></tr><tr><td class='mname'><a class='cl' href='session_dashboard_llama31_8b.html#fig_pca'>Llama-3.1-8B</a></td><td class=""><a class="cl" href="session_dashboard_llama31_8b.html#fig_pca">28%</a></td><td class="ok"><a class="cl" href="session_dashboard_llama31_8b.html#fig_fig8">valence (pleasant↔unpleasant)</a></td><td class=""><a class="cl" href="session_dashboard_llama31_8b.html#fig_pca">14%</a></td><td class="ok"><a class="cl" href="session_dashboard_llama31_8b.html#fig_fig8">arousal (calm↔excited)</a></td></tr><tr><td class='mname'><a class='cl' href='session_dashboard_llama31_70b.html#fig_pca'>Llama-3.1-70B</a></td><td class=""><a class="cl" href="session_dashboard_llama31_70b.html#fig_pca">26%</a></td><td class="ok"><a class="cl" href="session_dashboard_llama31_70b.html#fig_fig8">valence (pleasant↔unpleasant)</a></td><td class=""><a class="cl" href="session_dashboard_llama31_70b.html#fig_pca">14%</a></td><td class="ok"><a class="cl" href="session_dashboard_llama31_70b.html#fig_fig8">arousal (calm↔excited)</a></td></tr><tr><td class='mname'><a class='cl' href='session_dashboard_llama33_70b.html#fig_pca'>Llama-3.3-70B</a></td><td class=""><a class="cl" href="session_dashboard_llama33_70b.html#fig_pca">26%</a></td><td class="ok"><a class="cl" href="session_dashboard_llama33_70b.html#fig_fig8">valence (pleasant↔unpleasant)</a></td><td class=""><a class="cl" href="session_dashboard_llama33_70b.html#fig_pca">14%</a></td><td class="ok"><a class="cl" href="session_dashboard_llama33_70b.html#fig_fig8">arousal (calm↔excited)</a></td></tr></table></div>
+<ul class="big">
+  <li><b>PC1 is always valence</b> (≈26–33% of the variance, ~2&times; the size of PC2). On every model the single
+      biggest axis sorts emotions pleasant↔unpleasant, a universal good-versus-bad-feeling dimension.</li>
+  <li><b>PC2 is always ≈12–14% of the variance, but its meaning differs.</b> On the <b>3 Llama models</b> PC2 <i>is</i>
+      arousal (calm↔excited), the paper's textbook layout. On <b>Gemma and Qwen</b> PC2 is <i>not</i> cleanly arousal
+      (arousal barely correlates with it); their arousal sits on a deeper axis (PC3/PC4), so PC2 there carries some
+      other secondary structure.</li>
+  <li><b>Takeaway:</b> the <i>first</i> axis (valence) is universal and strong; the <i>second</i> axis is where models
+      diverge. Only Llama puts the classic arousal axis there, matching the paper.</li>
+</ul>
+
+<h2>4 · Where the models differ, from each other and the paper</h2>
+<ul class="big">
+  <li><b>The calm↔excited axis (arousal) isn't always the #2 axis.</b> Only the 3 Llama models match the paper here;
+      Gemma and Qwen put arousal on a deeper axis. See the <b>Fig 7 close-up above</b> for the per-model breakdown.</li>
+  <li><b>Reading the emotion off a single word is too coarse.</b> Two tests read at one token. "Does a scenario light
+      up its own emotion?" (Fig&nbsp;2) works on 5/8 (Llama + Qwen) but fails on Gemma. "Can we tell the user's
+      feeling from the model's reply-feeling?" (Fig&nbsp;10) <b>fails on all 8</b>; at one word both read the
+      same generic mood. Averaging over the whole passage recovers it, so the structure <i>is</i> there. The one-word
+      snapshot just misses it.</li>
+</ul>
+
+<h2>5 · The big picture: by family, by size, vs Claude</h2>
+
+<h3>By model family</h3>
+<ul class="big">
+  <li><b>Llama (3.1-8B / 3.1-70B / 3.3-70B): the most paper-faithful geometry.</b> It is the only family where the
+      calm↔excited (arousal) axis lands on PC2, the paper's #2 axis. The single-word scenario readout (Fig&nbsp;2)
+      is clean, and the (untied) logit lens gives the most legible English up-tokens. 3.1-70B and 3.3-70B are
+      near-identical <b>fine-tune twins</b> (vectors ~0.99 cosine).</li>
+  <li><b>Qwen (3-8B / 3-32B): readouts work, with one quirk.</b> Single-word Fig&nbsp;2 is clean, unlike
+      Gemma, and arousal sits on a deeper axis. One oddity: <b>Qwen3-32B is the only model where the reply-emotion edge at
+      '<code>:</code>' disappears</b> (user ≈ ':').</li>
+  <li><b>Gemma (4-31B dense / E4B edge / 26B-A4B MoE): strong geometry, weak single-word readouts.</b> Fig&nbsp;2 fails
+      (0–2/12) and arousal sits on a deep PC4. The dense, edge, and mixture-of-experts variants are
+      <b>indistinguishable</b> here; architecture makes no difference, and the family signature dominates.</li>
+</ul>
+
+<h3>By size</h3>
+<ul class="big">
+  <li><b>The human-like representation is scale-invariant.</b> It is just as clean in the 4B-class <b>edge model</b>
+      (Gemma-E4B, width 2560) as in the <b>70Bs</b>. Valence stays the #1 axis, emotions still cluster, and the match to human norms
+      holds at <i>every</i> size.</li>
+  <li><b>The differences track family, not size.</b> Arousal-on-PC2 is a Llama trait at 8B <i>and</i> 70B. The Fig&nbsp;2
+      single-word failure is a Gemma trait at 31B, E4B <i>and</i> MoE. The small Llama-8B and Qwen-8B even read
+      single-word scenarios <i>better</i> than the larger Gemma-31B; bigger is not more paper-faithful here.</li>
+</ul>
+
+<h3>vs Claude</h3>
+<p>Claude (the paper's model) shows the full set of effects: the clean representation geometry <i>and</i> the
+   single-word contextual readouts. Among the 8 open models, <b>none matches Claude across the board.</b>
+   <b>Llama is closest on representation</b> (arousal on PC2 plus the cleanest geometry), and all of them trail Claude
+   on the single-word contextual readouts.</p>
+<div class="twocol">
+  <div class="cbox sim"><h3>Same as Claude (all / most open models)</h3><ul>
+    <li>Emotions are clean directions on a human-like map, valence = #1 axis (all 8).</li>
+    <li>Similar emotions cluster; opposites point apart (all 8).</li>
+    <li>The reply's emotion is readable at the Assistant '<code>:</code>' (all 8).</li>
+    <li>Emotion is tracked per speaker, not per name-tag, Fig&nbsp;19 (all 8/8).</li>
+  </ul></div>
+  <div class="cbox dif"><h3>Weaker than Claude</h3><ul>
+    <li>Arousal isn't always the #2 axis; only the 3 Llama models match (Gemma/Qwen put it deeper).</li>
+    <li>The ':' only <i>clearly</i> beats the user position (the paper's "not echoing" gap) on 2/8; elsewhere the user's words predict the reply about as well.</li>
+    <li>Single-word readouts are weaker (scenario 5/8; user-vs-reply 0/8); averaging recovers them.</li>
+    <li>Effects are generally smaller; these are smaller open models than Claude.</li>
+  </ul></div>
+</div>
+<p class="caveat"><b>Why the gap (fair-comparison note).</b> The paper studied <b>Claude</b>, a large frontier model with
+  internal evals; we use <b>8 open-weight models</b> and public datasets, with a simpler single-token <b>readout</b>.
+  So the differences most likely reflect <b>scale and method</b> rather than a flaw in the paper. The pattern: the emotion
+  <i>representation</i> is the easy, universal part and shows up everywhere; faithful contextual <i>readout</i> is where
+  scale and family start to matter.</p>
+</div>
+ <div id="paneB" class="pane">
+<div class="empty"><div class="ebox"><div class="ebig">PART&nbsp;B · BEHAVIOR</div>
+<p>How the emotion representations <i>drive behavior</i>: self-reported preferences and steering (Fig&nbsp;4, paper §1.3)
+and the Part-3 alignment cases (reward hacking, blackmail, sycophancy). Cross-model results coming soon.</p></div></div>
+</div>
+</div>
+<script>
+ function showPane(p){
+   document.querySelectorAll('.pane').forEach(e=>e.classList.remove('active'));
+   document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));
+   document.getElementById('pane'+p).classList.add('active');
+   document.querySelector('.tab[data-p="'+p+'"]').classList.add('active');
+ }
+</script>
+</body></html>
