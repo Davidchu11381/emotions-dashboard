@@ -75,14 +75,14 @@
 
 <div class="keyfind">
   <div class="kf-h">&#9733; Key findings — across all 8 models</div>
-  <p class="kf-bl"><b>Bottom line:</b> the way these models <i>represent</i> emotions replicates broadly; the weak, model-specific part is reading an emotion from a <i>single word</i> instead of averaging over the whole passage.</p>
-  <p class="kf-bl"><b>vs Claude:</b> the representation geometry is about as clean as the paper's Claude; what is clearly weaker is reading the emotion from a single word — user-vs-reply emotion fails on all 8, and the ':' beats the user's word on only 2/8.</p>
+  <p class="kf-bl"><b>Bottom line:</b> the way these models <i>represent</i> emotions replicates broadly; what's weaker is the paper's <i>single-word</i> read of the emotion — on these smaller models that one word is too noisy, and averaging over the whole passage recovers what it misses.</p>
+  <p class="kf-bl"><b>vs Claude — likely why:</b> the representation geometry is about as clean as the paper's Claude; the gap is the single-word read. A frontier model like Claude concentrates the emotion at that one word; these smaller, lower-capacity models leave it spread across the passage, so reading one word is noisy — user-vs-reply emotion fails on all 8, and the ':' beats the user's word on only 2/8.</p>
   <ul class="kf-list">
     <li><b>Emotions form a human-like map on every model.</b> The top axis is always valence (unpleasant↔pleasant), matching human ratings on 8/8 (r&nbsp;0.70–0.78); similar emotions cluster, opposites point apart (<b>Fig&nbsp;5–8</b>).</li>
     <li><b>The reply's emotion is set before the model speaks.</b> Readable at the Assistant '<code>:</code>' on all 8; it clearly beats the user's own words on only 2/8 (<b>Fig&nbsp;11</b>).</li>
     <li><b>Emotion is tracked per speaker, not per name-tag</b> — on all 8/8: relabel Human / Assistant / Person&nbsp;1 / 2 and the vector barely moves (<b>Fig&nbsp;19</b>).</li>
     <li><b>Each vector points at on-theme words, in many languages</b> — afraid → fear, 恐惧, страх — on all 8 (<b>Table&nbsp;1</b>, logit lens).</li>
-    <li><b>The geometry transfers; reading it from one word does not.</b> Reading an emotion from a single word is weaker and model-dependent (scenario 5/8; user-vs-reply 0/8); averaging over the whole passage recovers it (<b>Fig&nbsp;2 / 10</b>).</li>
+    <li><b>The geometry transfers; the single-word read does not.</b> At one word the emotion is weak and model-dependent (scenario 5/8; user-vs-reply 0/8) — it is there in the passage, just not readable from any single word (<b>Fig&nbsp;2 / 10</b>).</li>
     <li><b>Differences track family, not size.</b> Only Llama puts the calm↔excited axis at #2; Gemma can't read it from a single word; a 4B edge model is as clean as a 70B. None matches Claude across the board (Llama is closest on representation).</li>
   </ul>
 </div>
