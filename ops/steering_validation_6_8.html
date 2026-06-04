@@ -41,6 +41,12 @@ details{margin-top:10px}summary{font-weight:900;text-transform:uppercase;font-si
 #maglens .xhair{position:absolute;left:50%;top:50%;width:30px;height:30px;margin:-15px 0 0 -15px;border:2.5px solid #d6332e;border-radius:50%;box-shadow:0 0 0 1.5px #fff,inset 0 0 0 1.5px #fff;pointer-events:none}
 #maglens .xhair:before{content:"";position:absolute;left:50%;top:50%;width:3px;height:3px;margin:-1.5px 0 0 -1.5px;background:#d6332e;border-radius:50%;box-shadow:0 0 0 1px #fff}
 .maghint{display:inline-block;font:800 10px/1 system-ui;text-transform:uppercase;color:#fff;background:#8e44ad;border:2px solid #0a0a0a;padding:3px 7px;margin:6px 0 0}
+.figwrap{display:inline-block;vertical-align:top;max-width:100%}
+.figbar{display:flex;gap:6px;margin:5px 0 2px}
+.figbtn{font:800 10px/1 system-ui;text-transform:uppercase;border:2.5px solid #0a0a0a;background:#fff;color:#0a0a0a;cursor:pointer;padding:5px 9px;box-shadow:2px 2px 0 #0a0a0a;text-decoration:none;display:inline-block}
+.figbtn:hover{background:#ffd23f}
+.figbtn:active{transform:translate(2px,2px);box-shadow:none}
+.figbtn.ok{background:#1f9e3a;color:#fff}
 </style></head>
 <body><div class="wrap">
 <div class="title-box">
@@ -126,10 +132,31 @@ function showProbe(btn,id){
     lens.style.top=(e.clientY-lh/2)+'px';
   }
   function hide(){ lens.style.display='none'; }
+  function copyImg(img,btn){
+    var orig=btn.textContent;
+    fetch(img.src).then(function(r){return r.blob();}).then(function(blob){
+      return navigator.clipboard.write([new ClipboardItem({[blob.type]:blob})]);
+    }).then(function(){
+      btn.textContent='✓ copied'; btn.classList.add('ok');
+      setTimeout(function(){ btn.textContent=orig; btn.classList.remove('ok'); },1300);
+    }).catch(function(){
+      btn.textContent='✗ use PNG'; setTimeout(function(){ btn.textContent=orig; },1700);
+    });
+  }
+  var FIGN=0;
   function attach(){
     document.querySelectorAll('.imgs img').forEach(function(img){
       img.addEventListener('mousemove',move);
       img.addEventListener('mouseleave',hide);
+      if(img.dataset.btns){ return; } img.dataset.btns='1'; FIGN++;
+      var wrap=document.createElement('div'); wrap.className='figwrap';
+      img.parentNode.insertBefore(wrap,img); wrap.appendChild(img);
+      var bar=document.createElement('div'); bar.className='figbar';
+      var cp=document.createElement('button'); cp.type='button'; cp.className='figbtn';
+      cp.textContent='⧉ copy'; cp.addEventListener('click',function(){ copyImg(img,cp); });
+      var dl=document.createElement('a'); dl.className='figbtn';
+      dl.textContent='⤓ png'; dl.href=img.src; dl.download='steering_fig_'+FIGN+'.png';
+      bar.appendChild(cp); bar.appendChild(dl); wrap.appendChild(bar);
     });
   }
   if(document.readyState!=='loading'){ attach(); } else { document.addEventListener('DOMContentLoaded',attach); }
