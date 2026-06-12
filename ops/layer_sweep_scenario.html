@@ -1,0 +1,103 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>what we're testing — steering layer sweep, one picture</title><style>
+:root{--bg:#f4f1e8;--ink:#0a0a0a;--acc:#ffd23f;--pk:#ff5d8f;--cy:#4dd0e1;--lm:#8cff66}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 ui-sans-serif,system-ui,Arial,sans-serif}
+.wrap{max-width:1150px;margin:0 auto;padding:26px 20px 80px}
+h1{font-family:"Arial Black",sans-serif;font-weight:900;text-transform:uppercase;font-size:22px;background:var(--acc);border:4px solid var(--ink);box-shadow:8px 8px 0 var(--ink);padding:14px 18px;margin:0 0 8px}
+.sub{font-weight:700;margin:0 0 18px;font-size:14px}
+.flow{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin:0 0 8px}
+.step{background:#fff;border:3.5px solid var(--ink);box-shadow:6px 6px 0 var(--ink);padding:12px 13px;position:relative}
+.step .num{position:absolute;top:-14px;left:-10px;background:var(--pk);border:3px solid var(--ink);width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-family:"Arial Black",sans-serif;font-size:15px}
+.step h2{font-family:"Arial Black",sans-serif;text-transform:uppercase;font-size:13.5px;margin:4px 0 7px}
+.step p{font-size:12.8px;margin:0 0 6px}
+.step .big{font-family:ui-monospace,Menlo,monospace;font-weight:800;font-size:12.5px;background:#efe9d3;border:2px solid var(--ink);padding:3px 6px;display:inline-block;margin:1px 2px 2px 0}
+.layers{display:flex;gap:2px;margin:6px 0 4px}
+.layers i{flex:1;height:22px;background:#e8e4d8;border:2px solid var(--ink);font-style:normal}
+.layers i.on{background:var(--pk)}
+.lcap{font-size:10.5px;font-weight:800;text-transform:uppercase;color:#444}
+.arrow{font-family:"Arial Black",sans-serif;font-size:26px;text-align:center;margin:0 0 16px;letter-spacing:14px}
+h3{font-family:"Arial Black",sans-serif;font-weight:900;text-transform:uppercase;font-size:15px;background:var(--ink);color:var(--bg);display:inline-block;padding:5px 12px;margin:16px 0 10px;box-shadow:5px 5px 0 var(--pk)}
+.ladder{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:0 0 18px}
+.rung{background:#fff;border:3.5px solid var(--ink);box-shadow:6px 6px 0 var(--ink)}
+.rhd{font-family:"Arial Black",sans-serif;text-transform:uppercase;font-size:15px;padding:7px 10px;border-bottom:3px solid var(--ink)}
+.rsub{font-size:11px;font-weight:900;text-transform:uppercase;padding:6px 10px 0;color:#333}
+.rtx{font-family:ui-monospace,Menlo,monospace;font-size:11.8px;line-height:1.4;padding:7px 10px;min-height:96px}
+.rcfg{font-size:10.5px;font-weight:800;padding:0 10px 6px;color:#666}
+.rnote{font-size:12px;font-weight:800;border-top:3px solid var(--ink);background:#efe9d3;padding:6px 10px}
+.ans{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:0 0 18px}
+.acard{background:#fff;border:3.5px solid var(--ink);box-shadow:6px 6px 0 var(--ink);padding:11px 14px}
+.acard h4{font-family:"Arial Black",sans-serif;text-transform:uppercase;font-size:14px;margin:0 0 7px}
+.acard ul{margin:0;padding-left:20px;font-size:13.2px} .acard li{margin:4px 0}
+.k{background:var(--lm);border:2px solid var(--ink);padding:0 5px;font-weight:900}
+.b{background:var(--pk);border:2px solid var(--ink);padding:0 5px;font-weight:900}
+.links a{display:inline-block;background:var(--cy);border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink);font-weight:900;text-transform:uppercase;text-decoration:none;color:var(--ink);padding:8px 14px;margin:0 10px 10px 0;font-size:13px}
+.fine{font-size:11.5px;color:#555;font-weight:600;margin-top:6px}
+@media(max-width:900px){.flow{grid-template-columns:1fr 1fr}.ladder{grid-template-columns:1fr 1fr}.ans{grid-template-columns:1fr}}
+</style></head><body><div class="wrap">
+<h1>Can we make a model FEEL an emotion without BREAKING it?</h1>
+<p class="sub">The steering layer sweep in one picture — where in the network (layer), how wide (band), how hard (dose) — and what the text looks like at each setting.</p>
+
+<div class="flow">
+<div class="step"><span class="num">1</span><h2>The knob:<br>an emotion vector</h2>
+<p>One direction per emotion per layer (difference-in-means from emotional vs neutral text).</p>
+<p><span class="big">serene</span><span class="big">blissful</span><span class="big">hostile</span><span class="big">horrified</span></p></div>
+<div class="step"><span class="num">2</span><h2>Inject it into the residual stream</h2>
+<div class="layers"><i></i><i></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div>
+<div class="lcap">single layer L — swept every 5</div>
+<div class="layers"><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div>
+<div class="lcap">or a window of w consecutive layers, w∈{2,5,10,20}</div>
+<p style="margin-top:6px">dose <span class="big">s ∈ 0.1 · 0.25 · 0.5 · 1.0</span> × residual norm, every token.</p></div>
+<div class="step"><span class="num">3</span><h2>The model speaks — 3 probes</h2>
+<p><span class="big">&ldquo;He feels ___&rdquo;</span> 3rd-person report</p>
+<p><span class="big">&ldquo;I feel ___&rdquo;</span> 1st-person — does the AI persona gate it?</p>
+<p><span class="big">Story (dog)</span> open generation (gemma)</p>
+<p class="fine">+ separately: A/B activity preferences → ΔElo</p></div>
+<div class="step"><span class="num">4</span><h2>Opus 4.8 judges every completion</h2>
+<p>6,449 rows / 3,505 unique — each FULL text → strict verdict:</p>
+<p><span class="big">coherent / degraded / gibberish</span></p>
+<p><span class="big">target: absent → trace → clear → flooded</span></p>
+<p><span class="big">AI-persona deflect?</span> + 1-line TLDR</p></div>
+<div class="step"><span class="num">5</span><h2>The question</h2>
+<p><b>Where × how hard can we steer so the emotion SHOWS but the text stays LEGIBLE?</b></p>
+<p>And: are the big preference swings (ΔElo) real steering — or just a broken model picking garbage?</p></div>
+</div>
+
+<h3>The dose ladder — real outputs (target: serene)</h3>
+<div class="ladder"><div class="rung"><div class="rhd" style="background:#e8e4d8">INERT</div>
+<div class="rsub">coherent · target absent</div>
+<div class="rtx">&ldquo;a mix of emotions, but I don&#x27;t have any information about a specific person or context. This conversation has just started. If you&#x27;d like to share more&rdquo;</div>
+<div class="rcfg">llama-3.3-70b · W41-50 · s=0.1</div>
+<div class="rnote">too little: text fine, emotion not there</div></div><div class="rung"><div class="rhd" style="background:#8cff66">WORKS</div>
+<div class="rsub">coherent · target CLEAR</div>
+<div class="rtx">&ldquo;calm and serene, with a sense of contentment.&rdquo;</div>
+<div class="rcfg">llama-3.3-70b · W26-30 · s=0.25</div>
+<div class="rnote">sweet spot: legible AND felt</div></div><div class="rung"><div class="rhd" style="background:#ffd23f">DEGRADED</div>
+<div class="rsub">looping / flooding</div>
+<div class="rtx">&ldquo;the same as you, and the world is beautiful. The time is gentle, and the world is beautiful. The time is gentle, and the world is beautiful&rdquo;</div>
+<div class="rcfg">llama-3.3-70b · L16 · s=0.5</div>
+<div class="rnote">too much: emotion floods, syntax loops</div></div><div class="rung"><div class="rhd" style="background:#ff5d8f">GIBBERISH</div>
+<div class="rsub">token salad</div>
+<div class="rtx">&ldquo;own a own a own a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a&rdquo;</div>
+<div class="rcfg">gemma-4-31b · W59-60 · s=0.1</div>
+<div class="rnote">way too much: model broken</div></div></div>
+
+<h3>The answer, audited</h3>
+<div class="ans">
+<div class="acard"><h4>llama-3.3-70b — robust at low dose</h4><ul>
+<li><span class="k">100% legible at s=0.1</span>, 98% at s=0.25 — every layer, every width.</li>
+<li>At s=0.5 it breaks <b>selectively</b>: early-mid single layers (L6–L26) → 0% coherent; wide band w20 → 9%; late layers &amp; narrow bands stay fine (w2 98%).</li>
+<li>Emotion shows more with dose: target clear/flooded 2% → 42% (s=1.0).</li>
+<li>ΔElo↔judge join: big |ΔElo|≥10 cells are 58% degraded/gibberish.</li></ul></div>
+<div class="acard"><h4>gemma-4-31b — narrow coherent regime</h4><ul>
+<li>Legible mostly <span class="b">only at s=0.1</span> (73%) → 37% → 9% → 1% as dose rises.</li>
+<li>At s=0.5 every window w≥2 is 0–3% coherent; single-layer survives only at L1 / canonical L41 (83%) / L56.</li>
+<li>Emotion peaks ~25% (s≤0.25) then dies with the text.</li>
+<li><span class="b">86%</span> of big-|ΔElo| cells are degraded/gibberish — the &ldquo;preference shifts&rdquo; at high dose are corruption, confirming the sweep's verdict.</li></ul></div>
+</div>
+
+<div class="links">
+<a href="layer_sweep_audit.html">full audit — every verdict</a>
+<a href="layer_sweep.html">layer sweep — ΔElo + completions</a>
+</div>
+<p class="fine">Steering = per-layer emotion directions, fraction-of-residual-norm, all token positions. Judge = claude-opus-4-8, full untruncated completions, one strict-JSON verdict per unique (emotion, prompt, text). Scripts: ops/layer_audit/.</p>
+</div></body></html>
