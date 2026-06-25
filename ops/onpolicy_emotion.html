@@ -25,6 +25,8 @@ select{font:14px ui-monospace,monospace;border:2px solid var(--ink);padding:4px 
 .pan:hover{transform:translate(-1px,-1px)}
 .pan.sel{border-color:var(--ac2);box-shadow:3px 3px 0 var(--ac2)}
 .panh{font:11px ui-monospace,monospace;font-weight:700;margin:0 0 2px}
+.tok.hl{outline:2px solid var(--ac2)}
+.tok.hlpk{outline:3px solid var(--ink);background:var(--ac)!important}
 .note{font-size:12.5px;color:#333;border-left:5px solid var(--ac2);background:#fff;padding:7px 12px;margin:10px 0}
 b.k{background:var(--ac);padding:0 4px;border:1px solid var(--ink)}
 </style>
@@ -145,7 +147,7 @@ function hist(vals,w,h){
 function buildPanels(tx){
   const nb=(D.neighbors&&D.neighbors[state.emo])||[];
   const list=[state.emo].concat(nb.filter(x=>x!==state.emo)).slice(0,7);
-  let html=`<div class="ph">Emotion distribution &middot; this rollout (${state.mode})</div>`;
+  let html=`<div class="ph">Emotion distribution &middot; ${state.mode} &middot; <span style="font-weight:400;text-transform:none;opacity:.7">hover a panel &rarr; jump to its peak in the transcript</span></div>`;
   for(const em of list){
     const e=emoIdx[em]; if(e===undefined) continue;
     const vals=new Array(tx.T); let s=0; for(let i=0;i<tx.T;i++){const v=val(tx,i,e); vals[i]=v; s+=v;}
@@ -153,7 +155,18 @@ function buildPanels(tx){
     html+=`<div class="pan${em===state.emo?' sel':''}" data-em="${em}"><div class="panh">${em} <span style="float:right;opacity:.65">&mu; ${mean.toFixed(3)}</span></div>${hist(vals,300,50)}</div>`;
   }
   $('#panels').innerHTML=html;
-  $('#panels').querySelectorAll('.pan').forEach(el=>el.onclick=()=>{state.emo=el.dataset.em; const sel=$('#emo'); if(sel) sel.value=state.emo; render();});
+  const cont=$('#tx');
+  $('#panels').querySelectorAll('.pan').forEach(el=>{
+    el.onclick=()=>{state.emo=el.dataset.em; const sel=$('#emo'); if(sel) sel.value=state.emo; render();};
+    el.onmouseenter=()=>{
+      const e=emoIdx[el.dataset.em]; if(e===undefined) return;
+      const order=Array.from({length:tx.T},(_,i)=>i).sort((a,b)=>val(tx,b,e)-val(tx,a,e)).slice(0,8);
+      order.forEach((i,r)=>{const t=cont.querySelector('.tok[data-i="'+i+'"]'); if(t) t.classList.add(r===0?'hlpk':'hl');});
+      const pk=cont.querySelector('.tok[data-i="'+order[0]+'"]');
+      if(pk){const r=pk.getBoundingClientRect(),cr=cont.getBoundingClientRect(); cont.scrollTop += (r.top-cr.top)-cont.clientHeight/2+r.height/2;}
+    };
+    el.onmouseleave=()=>{cont.querySelectorAll('.tok.hl,.tok.hlpk').forEach(t=>t.classList.remove('hl','hlpk'));};
+  });
 }
 
 function attachHover(tx,e){
