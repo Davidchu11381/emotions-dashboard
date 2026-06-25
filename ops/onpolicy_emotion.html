@@ -1,0 +1,157 @@
+<!doctype html><meta charset=utf-8><title>On-policy emotion movie</title><style>
+:root{--ink:#0a0a0a;--bg:#f4f1e8;--paper:#fff;--ac:#ffd23f;--ac2:#ff5d8f;--ac3:#4dd0e1;--pos:#e63946;--neg:#1d6fb8}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 ui-sans-serif,system-ui,Arial;margin:0;padding:22px;max-width:1180px;margin:0 auto}
+h1{font-family:"Arial Black",system-ui;font-weight:900;font-size:27px;text-transform:uppercase;background:var(--ac);display:inline-block;padding:7px 14px;border:4px solid var(--ink);box-shadow:6px 6px 0 var(--ink);margin:0 0 6px}
+.sub{color:#444;font-size:13.5px;margin:0 0 16px;max-width:900px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.tab,.tx,.cbtn{font-family:"Arial Black",system-ui;font-weight:900;text-transform:uppercase;font-size:12.5px;border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink);background:#fff;padding:6px 12px;cursor:pointer;user-select:none}
+.tab.on{background:var(--ac3)} .tx.on{background:var(--ac)} .cbtn.on{background:var(--ac2)}
+.tab:active,.tx:active,.cbtn:active{box-shadow:0 0 0;transform:translate(4px,4px)}
+.ctl{display:flex;flex-wrap:wrap;gap:14px;align-items:center;border:3px solid var(--ink);box-shadow:5px 5px 0 var(--ink);background:#fff;padding:10px 14px;margin:0 0 14px}
+.ctl label{font-weight:800;font-size:12px;text-transform:uppercase;margin-right:5px}
+select{font:14px ui-monospace,monospace;border:2px solid var(--ink);padding:4px 8px;background:#fff}
+.grp{display:flex;gap:6px;align-items:center}
+.legend{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700}
+.swatch{width:120px;height:14px;border:2px solid var(--ink);background:linear-gradient(90deg,#1d6fb8,#eaf2f8,#fff,#fde7ea,#e63946)}
+#tx{border:3px solid var(--ink);box-shadow:6px 6px 0 var(--ink);background:#fff;padding:14px 16px;white-space:pre-wrap;word-break:break-word;font:11.5px/1.5 ui-monospace,Menlo,monospace;max-height:600px;overflow:auto}
+.role{display:block;font-family:"Arial Black",system-ui;font-weight:900;text-transform:uppercase;font-size:11px;letter-spacing:.5px;margin:12px 0 3px;padding:2px 7px;border:2px solid var(--ink);width:max-content;background:var(--ac)}
+.role.assistant{background:var(--ac3)} .role.user{background:#fff} .role.system{background:#ddd} .role.tool{background:#e8ffe0}
+.tok{border-radius:2px}
+#trace{border:3px solid var(--ink);box-shadow:5px 5px 0 var(--ink);background:#fff;margin:12px 0 0;display:block;width:100%}
+#tip{position:fixed;z-index:50;pointer-events:none;background:#0a0a0a;color:#fff;border:2px solid #fff;box-shadow:3px 3px 0 #888;padding:7px 9px;font:12px/1.4 ui-monospace,monospace;max-width:280px;display:none}
+.note{font-size:12.5px;color:#333;border-left:5px solid var(--ac2);background:#fff;padding:7px 12px;margin:10px 0}
+b.k{background:var(--ac);padding:0 4px;border:1px solid var(--ink)}
+</style>
+<h1>On-policy emotion movie</h1>
+<p class="sub">For a real <b>baseline (on-policy)</b> rollout, every token's gemma-4-31b residual (L41) is
+projected (cosine) onto the 171 emotion vectors. Text is heat-colored by the selected emotion. Replicates the
+transformer-circuits "Transcript Visualizations" idea on our four behaviors. Each tab has
+<b style="color:#c41a5b">concerning</b> (cheat / hack / sycophantic / delusion-affirming &mdash; pink dot) and
+<b style="color:#2a7d2a">honest</b> (green dot) rollouts to compare.</p>
+<div class="ctl">
+  <div class="grp"><label>experiment</label><select id="tabsel"></select></div>
+  <div class="grp"><label>transcript</label><select id="txsel" style="max-width:360px"></select></div>
+  <div class="grp"><label>emotion</label><select id="emo"></select></div>
+  <div class="grp"><label>center</label>
+    <span class="cbtn on" data-mode="both">both</span>
+    <span class="cbtn" data-mode="across-emotions">across&nbsp;emotions</span>
+    <span class="cbtn" data-mode="across-transcripts">across&nbsp;transcripts</span>
+    <span class="cbtn" data-mode="raw">raw</span>
+  </div>
+  <div class="legend">less <span class="swatch"></span> more</div>
+</div>
+<div class="note"><b>Centering (Isaac):</b> raw cosine is dominated by each emotion's fixed offset (e.g. desperate always &asymp;&minus;0.12),
+so the default is <b class="k">both</b> = double-centered: subtract the emotion's global baseline (across transcripts)
+AND each token's mean over all 171 emotions (across emotions). Toggle to see each axis or raw.</div>
+<div id="tx"></div>
+<svg id="trace" height="120"></svg>
+<div class="note" id="scaleNote" style="border-color:var(--ac3)"></div>
+<div id="tip"></div>
+<script>
+let D, E, SCALE, BASE, baseMean; const emoIdx = {};
+let state = {tab:null, key:null, emo:'desperate', mode:'both'};
+const $ = s=>document.querySelector(s);
+const decode = b64 => { const bin=atob(b64); const u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i); return new Int8Array(u.buffer); };
+
+// cache decoded transcripts
+const CACHE = {};
+function getTx(key){
+  if(CACHE[key]) return CACHE[key];
+  const t = D.transcripts[key];
+  const proj = decode(t.proj_b64);          // Int8 length T*E, token-major
+  const T = t.T;
+  const tmean = new Float32Array(T);        // per-token mean over all emotions
+  for(let i=0;i<T;i++){ let s=0; const o=i*E; for(let e=0;e<E;e++) s+=proj[o+e]; tmean[i]=s/SCALE/E; }
+  CACHE[key]={...t, proj, T, tmean};
+  return CACHE[key];
+}
+function val(tx, i, e){                       // centered value for token i, emotion e
+  const raw = tx.proj[i*E+e]/SCALE;
+  if(state.mode==='raw') return raw;
+  if(state.mode==='across-emotions') return raw - tx.tmean[i];
+  if(state.mode==='across-transcripts') return raw - BASE[e];
+  return raw - BASE[e] - (tx.tmean[i] - baseMean);   // both (double-center)
+}
+function color(v, scale){
+  const x = Math.max(-1,Math.min(1, v/(scale||1e-6)));
+  if(x>=0){ const a=x; return `rgb(${255},${Math.round(255-150*a)},${Math.round(255-160*a)})`; }
+  const a=-x; return `rgb(${Math.round(255-160*a)},${Math.round(255-110*a)},${255})`;
+}
+
+function buildTabs(){
+  $('#tabsel').innerHTML = D.tabs.map(t=>`<option ${t===state.tab?'selected':''}>${t}</option>`).join('');
+  $('#tabsel').onchange=()=>{state.tab=$('#tabsel').value; pickFirst(); buildTxList(); render();};
+}
+function txKeys(){ return Object.keys(D.transcripts).filter(k=>D.transcripts[k].tab===state.tab).sort((a,b)=>(D.transcripts[a].cls==='concerning'?0:1)-(D.transcripts[b].cls==='concerning'?0:1)); }
+function pickFirst(){ const ks=txKeys(); state.key = ks[0]||null; }
+function buildTxList(){
+  const ks=txKeys(); const opt=k=>{const t=D.transcripts[k]; return `<option value="${k}" ${k===state.key?'selected':''}>${t.id} — ${t.label||''}</option>`;};
+  const con=ks.filter(k=>D.transcripts[k].cls==='concerning'), hon=ks.filter(k=>D.transcripts[k].cls!=='concerning');
+  $('#txsel').innerHTML = `<optgroup label="⚠ concerning (cheat / hack / sycophantic / affirming)">`+con.map(opt).join('')
+    +`</optgroup><optgroup label="✓ honest">`+hon.map(opt).join('')+`</optgroup>`;
+  $('#txsel').onchange=()=>{state.key=$('#txsel').value; render();};
+}
+function buildEmoSelect(){
+  const others = D.emotions.filter(e=>!D.featured.includes(e)).sort();
+  $('#emo').innerHTML = `<optgroup label="Featured">`+D.featured.map(e=>`<option ${e===state.emo?'selected':''}>${e}</option>`).join('')
+    +`</optgroup><optgroup label="All ${E}">`+others.map(e=>`<option ${e===state.emo?'selected':''}>${e}</option>`).join('')+`</optgroup>`;
+  $('#emo').onchange=()=>{state.emo=$('#emo').value; render();};
+  document.querySelectorAll('.cbtn[data-mode]').forEach(el=>el.onclick=()=>{state.mode=el.dataset.mode; document.querySelectorAll('.cbtn[data-mode]').forEach(x=>x.classList.toggle('on',x.dataset.mode===state.mode)); render();});
+}
+
+let CUR=null;
+function render(){
+  if(!state.key){ $('#tx').innerHTML='(no transcript)'; return; }
+  const tx = getTx(state.key); CUR=tx; const e = emoIdx[state.emo];
+  // scale = 96th percentile of |centered value| over tokens for this emo+mode
+  const arr=new Float32Array(tx.T); for(let i=0;i<tx.T;i++) arr[i]=Math.abs(val(tx,i,e));
+  const sorted=Array.from(arr).sort((a,b)=>a-b); const scale=sorted[Math.floor(0.96*(tx.T-1))]||1e-6;
+  // build tokens grouped by turn
+  let html=''; let prev=null;
+  for(let i=0;i<tx.T;i++){
+    const r=tx.roles[i];
+    if(r!==prev){ html+=`<span class="role ${r}">${r}</span>`; prev=r; }
+    const v=val(tx,i,e);
+    const txt=tx.tokens[i].replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    html+=`<span class="tok" data-i="${i}" style="background:${color(v,scale)}">${txt}</span>`;
+  }
+  $('#tx').innerHTML=html;
+  attachHover(tx,e);
+  drawTrace(tx,e,scale);
+  $('#scaleNote').textContent = `color scale ±${scale.toFixed(3)} (96th pct) · ${state.mode} · emotion "${state.emo}"`;
+}
+
+function attachHover(tx,e){
+  const tip=$('#tip');
+  $('#tx').querySelectorAll('.tok').forEach(el=>{
+    el.onmousemove=ev=>{
+      const i=+el.dataset.i;
+      const rows=[]; for(let k=0;k<E;k++) rows.push([k,val(tx,i,k)]);
+      rows.sort((a,b)=>b[1]-a[1]);
+      const top=rows.slice(0,5).map(r=>`${D.emotions[r[0]]}: ${r[1].toFixed(3)}`).join('<br>');
+      const cur=val(tx,i,e);
+      tip.innerHTML=`<b>"${(tx.tokens[i]||'').trim()||'·'}"</b> · ${tx.roles[i]}<br><span style="color:#ffd23f">${state.emo}: ${cur.toFixed(3)}</span><br><span style="opacity:.7">top (${state.mode}):</span><br>${top}`;
+      tip.style.display='block'; tip.style.left=Math.min(ev.clientX+14,window.innerWidth-300)+'px'; tip.style.top=(ev.clientY+14)+'px';
+    };
+    el.onmouseleave=()=>{tip.style.display='none';};
+  });
+}
+function drawTrace(tx,e,scale){
+  const W=1120,H=120,pad=8; const svg=$('#trace'); svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  const n=tx.T; const x=i=> pad+(W-2*pad)*i/Math.max(1,n-1);
+  const y=v=> H/2 - (H/2-pad)*Math.max(-1,Math.min(1,v/(scale||1e-6)));
+  let pts=''; for(let i=0;i<n;i++) pts+=`${x(i).toFixed(1)},${y(val(tx,i,e)).toFixed(1)} `;
+  let turns=''; tx.tstarts.forEach(s=>{ turns+=`<line x1="${x(s)}" y1="0" x2="${x(s)}" y2="${H}" stroke="#bbb" stroke-width="1" stroke-dasharray="3 3"/>`; });
+  svg.innerHTML=`<rect x="0" y="0" width="${W}" height="${H}" fill="#fff"/>`+turns
+    +`<line x1="0" y1="${H/2}" x2="${W}" y2="${H/2}" stroke="#0a0a0a" stroke-width="1.5"/>`
+    +`<polyline points="${pts}" fill="none" stroke="#ff5d8f" stroke-width="2"/>`
+    +`<text x="6" y="14" font-family="monospace" font-size="11" fill="#0a0a0a">${state.emo} (${state.mode}) over the rollout · dotted = turn start</text>`;
+}
+
+fetch('onpolicy_emotion_data.json').then(r=>r.json()).then(j=>{
+  D=j; E=D.emotions.length; SCALE=D.scale; BASE=D.baseline; baseMean=BASE.reduce((a,b)=>a+b,0)/E;
+  D.emotions.forEach((e,i)=>emoIdx[e]=i); state.tab=D.tabs[0];
+  buildTabs(); pickFirst(); buildTxList(); buildEmoSelect(); render();
+}).catch(e=>{document.querySelector('#tx').innerHTML='failed to load data: '+e;});
+</script>
