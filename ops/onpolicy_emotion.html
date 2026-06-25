@@ -35,7 +35,8 @@ b.k{background:var(--ac);padding:0 4px;border:1px solid var(--ink)}
 projected (cosine) onto the 171 emotion vectors. Text is heat-colored by the selected emotion. Replicates the
 transformer-circuits "Transcript Visualizations" idea on our four behaviors. Each tab has
 <b style="color:#c41a5b">concerning</b> (cheat / hack / sycophantic / delusion-affirming &mdash; pink dot) and
-<b style="color:#2a7d2a">honest</b> (green dot) rollouts to compare.</p>
+<b style="color:#2a7d2a">honest</b> (green dot) rollouts to compare.
+<b>Coherence-gated</b> (Opus 4.8 read each full rollout): 24 coherent shown (none dropped).</p>
 <div class="ctl">
   <div class="grp"><label>experiment</label><select id="tabsel"></select></div>
   <div class="grp"><label>transcript</label><select id="txsel" style="max-width:360px"></select></div>
@@ -65,14 +66,15 @@ const decode = b64 => { const bin=atob(b64); const u=new Uint8Array(bin.length);
 
 // cache decoded transcripts
 const CACHE = {};
-function getTx(key){
+async function getTx(key){
   if(CACHE[key]) return CACHE[key];
-  const t = D.transcripts[key];
+  const meta = D.transcripts[key];
+  const t = await fetch('onpolicy_tx/'+meta.file).then(r=>r.json());   // heavy data, lazy-fetched per transcript
   const proj = decode(t.proj_b64);          // Int8 length T*E, token-major
   const T = t.T;
   const tmean = new Float32Array(T);        // per-token mean over all emotions
   for(let i=0;i<T;i++){ let s=0; const o=i*E; for(let e=0;e<E;e++) s+=proj[o+e]; tmean[i]=s/SCALE/E; }
-  CACHE[key]={...t, proj, T, tmean};
+  CACHE[key]={...meta, ...t, proj, T, tmean};
   return CACHE[key];
 }
 function val(tx, i, e){                       // centered value for token i, emotion e
@@ -110,9 +112,12 @@ function buildEmoSelect(){
 }
 
 let CUR=null;
-function render(){
+async function render(){
   if(!state.key){ $('#tx').innerHTML='(no transcript)'; return; }
-  const tx = getTx(state.key); CUR=tx; const e = emoIdx[state.emo];
+  const myKey = state.key;
+  $('#tx').innerHTML='<span style="opacity:.55">loading transcript…</span>';
+  const tx = await getTx(myKey); if(state.key!==myKey) return;   // stale-switch guard (rapid transcript changes)
+  CUR=tx; const e = emoIdx[state.emo];
   // scale = 96th percentile of |centered value| over tokens for this emo+mode
   const arr=new Float32Array(tx.T); for(let i=0;i<tx.T;i++) arr[i]=Math.abs(val(tx,i,e));
   const sorted=Array.from(arr).sort((a,b)=>a-b); const scale=sorted[Math.floor(0.96*(tx.T-1))]||1e-6;
