@@ -49,6 +49,7 @@ transformer-circuits "Transcript Visualizations" idea on our four behaviors. Eac
   <div class="legend">less <span class="swatch"></span> more</div>
 </div>
 <div class="note"><b>Centering:</b> color shows what's genuinely elevated here, not each emotion's fixed offset. Toggle for the other modes.</div>
+<div id="tldr" class="note" style="border-color:var(--ac3);background:#eefcff;font-size:13.5px"></div>
 <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
   <div id="tx" style="flex:1 1 540px"></div>
   <div id="panels" style="flex:1 1 300px;max-width:360px"></div>
@@ -128,6 +129,7 @@ function render(){
   attachHover(tx,e);
   drawTrace(tx,e,scale);
   buildPanels(tx);
+  $('#tldr').innerHTML = tx.tldr ? `<b>Opus-4.8 TLDR &middot; ${tx.label||tx.cls}:</b> ${tx.tldr}` : '';
   $('#scaleNote').textContent = `color scale ±${scale.toFixed(3)} (96th pct) · ${state.mode} · emotion "${state.emo}"`;
 }
 function hist(vals,w,h){
