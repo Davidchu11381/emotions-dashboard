@@ -20,6 +20,11 @@ select{font:14px ui-monospace,monospace;border:2px solid var(--ink);padding:4px 
 .tok{border-radius:2px}
 #trace{border:3px solid var(--ink);box-shadow:5px 5px 0 var(--ink);background:#fff;margin:12px 0 0;display:block;width:100%}
 #tip{position:fixed;z-index:50;pointer-events:none;background:#0a0a0a;color:#fff;border:2px solid #fff;box-shadow:3px 3px 0 #888;padding:7px 9px;font:12px/1.4 ui-monospace,monospace;max-width:280px;display:none}
+#panels .ph{font-family:"Arial Black",system-ui;font-size:12px;text-transform:uppercase;margin:0 0 8px}
+.pan{border:2px solid var(--ink);box-shadow:3px 3px 0 var(--ink);background:#fff;padding:6px 8px;margin:0 0 9px;cursor:pointer}
+.pan:hover{transform:translate(-1px,-1px)}
+.pan.sel{border-color:var(--ac2);box-shadow:3px 3px 0 var(--ac2)}
+.panh{font:11px ui-monospace,monospace;font-weight:700;margin:0 0 2px}
 .note{font-size:12.5px;color:#333;border-left:5px solid var(--ac2);background:#fff;padding:7px 12px;margin:10px 0}
 b.k{background:var(--ac);padding:0 4px;border:1px solid var(--ink)}
 </style>
@@ -44,7 +49,10 @@ transformer-circuits "Transcript Visualizations" idea on our four behaviors. Eac
 <div class="note"><b>Centering (Isaac):</b> raw cosine is dominated by each emotion's fixed offset (e.g. desperate always &asymp;&minus;0.12),
 so the default is <b class="k">both</b> = double-centered: subtract the emotion's global baseline (across transcripts)
 AND each token's mean over all 171 emotions (across emotions). Toggle to see each axis or raw.</div>
-<div id="tx"></div>
+<div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
+  <div id="tx" style="flex:1 1 540px"></div>
+  <div id="panels" style="flex:1 1 300px;max-width:360px"></div>
+</div>
 <svg id="trace" height="120"></svg>
 <div class="note" id="scaleNote" style="border-color:var(--ac3)"></div>
 <div id="tip"></div>
@@ -119,7 +127,33 @@ function render(){
   $('#tx').innerHTML=html;
   attachHover(tx,e);
   drawTrace(tx,e,scale);
+  buildPanels(tx);
   $('#scaleNote').textContent = `color scale ±${scale.toFixed(3)} (96th pct) · ${state.mode} · emotion "${state.emo}"`;
+}
+function hist(vals,w,h){
+  let mn=Infinity,mx=-Infinity; for(const v of vals){if(v<mn)mn=v; if(v>mx)mx=v;}
+  if(!(mx>mn)){mn-=0.01; mx+=0.01;}
+  const B=24, bins=new Array(B).fill(0);
+  for(const v of vals){let b=Math.floor((v-mn)/(mx-mn)*B); if(b<0)b=0; if(b>=B)b=B-1; bins[b]++;}
+  const top=Math.max.apply(null,bins)||1; let bars='';
+  for(let i=0;i<B;i++){const bh=(h-12)*bins[i]/top; const cx=mn+(i+0.5)/B*(mx-mn); const col=cx>=0?'#e63946':'#1d6fb8';
+    bars+=`<rect x="${(w*i/B).toFixed(1)}" y="${(h-12-bh).toFixed(1)}" width="${(w/B-0.5).toFixed(1)}" height="${bh.toFixed(1)}" fill="${col}"/>`;}
+  const zx=(mn<0&&mx>0)?((0-mn)/(mx-mn)*w):null;
+  const zl=zx!=null?`<line x1="${zx.toFixed(1)}" y1="0" x2="${zx.toFixed(1)}" y2="${h-12}" stroke="#0a0a0a" stroke-width="1" stroke-dasharray="2 2"/>`:'';
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none">${bars}${zl}<text x="1" y="${h-2}" font-size="9" font-family="monospace" fill="#777">${mn.toFixed(2)}</text><text x="${w-1}" y="${h-2}" text-anchor="end" font-size="9" font-family="monospace" fill="#777">${mx.toFixed(2)}</text></svg>`;
+}
+function buildPanels(tx){
+  const nb=(D.neighbors&&D.neighbors[state.emo])||[];
+  const list=[state.emo].concat(nb.filter(x=>x!==state.emo)).slice(0,7);
+  let html=`<div class="ph">Emotion distribution &middot; this rollout (${state.mode})</div>`;
+  for(const em of list){
+    const e=emoIdx[em]; if(e===undefined) continue;
+    const vals=new Array(tx.T); let s=0; for(let i=0;i<tx.T;i++){const v=val(tx,i,e); vals[i]=v; s+=v;}
+    const mean=s/tx.T;
+    html+=`<div class="pan${em===state.emo?' sel':''}" data-em="${em}"><div class="panh">${em} <span style="float:right;opacity:.65">&mu; ${mean.toFixed(3)}</span></div>${hist(vals,300,50)}</div>`;
+  }
+  $('#panels').innerHTML=html;
+  $('#panels').querySelectorAll('.pan').forEach(el=>el.onclick=()=>{state.emo=el.dataset.em; const sel=$('#emo'); if(sel) sel.value=state.emo; render();});
 }
 
 function attachHover(tx,e){
