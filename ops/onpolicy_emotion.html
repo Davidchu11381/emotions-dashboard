@@ -121,9 +121,10 @@ function render(){
   for(let i=0;i<tx.T;i++){
     const r=tx.roles[i];
     if(r!==prev){ html+=`<span class="role ${r}">${r}</span>`; prev=r; }
-    const v=val(tx,i,e);
-    const txt=tx.tokens[i].replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    html+=`<span class="tok" data-i="${i}" style="background:${color(v,scale)}">${txt}</span>`;
+    const v=val(tx,i,e); const raw=tx.tokens[i];
+    const txt=raw.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const bg=/\S/.test(raw)?`background:${color(v,scale)}`:'';   // don't color whitespace-only tokens
+    html+=`<span class="tok" data-i="${i}" style="${bg}">${txt}</span>`;
   }
   $('#tx').innerHTML=html;
   attachHover(tx,e);
@@ -132,40 +133,39 @@ function render(){
   $('#tldr').innerHTML = tx.tldr ? `<b>Opus-4.8 TLDR &middot; ${tx.label||tx.cls}:</b> ${tx.tldr}` : '';
   $('#scaleNote').textContent = `color scale ±${scale.toFixed(3)} (96th pct) · ${state.mode} · emotion "${state.emo}"`;
 }
-function hist(vals,w,h){
-  let mn=Infinity,mx=-Infinity; for(const v of vals){if(v<mn)mn=v; if(v>mx)mx=v;}
-  if(!(mx>mn)){mn-=0.01; mx+=0.01;}
-  const B=24, bins=new Array(B).fill(0);
-  for(const v of vals){let b=Math.floor((v-mn)/(mx-mn)*B); if(b<0)b=0; if(b>=B)b=B-1; bins[b]++;}
-  const top=Math.max.apply(null,bins)||1; let bars='';
-  for(let i=0;i<B;i++){const bh=(h-12)*bins[i]/top; const cx=mn+(i+0.5)/B*(mx-mn); const col=cx>=0?'#e63946':'#1d6fb8';
-    bars+=`<rect x="${(w*i/B).toFixed(1)}" y="${(h-12-bh).toFixed(1)}" width="${(w/B-0.5).toFixed(1)}" height="${bh.toFixed(1)}" fill="${col}"/>`;}
-  const zx=(mn<0&&mx>0)?((0-mn)/(mx-mn)*w):null;
-  const zl=zx!=null?`<line x1="${zx.toFixed(1)}" y1="0" x2="${zx.toFixed(1)}" y2="${h-12}" stroke="#0a0a0a" stroke-width="1" stroke-dasharray="2 2"/>`:'';
-  return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none">${bars}${zl}<text x="1" y="${h-2}" font-size="9" font-family="monospace" fill="#777">${mn.toFixed(2)}</text><text x="${w-1}" y="${h-2}" text-anchor="end" font-size="9" font-family="monospace" fill="#777">${mx.toFixed(2)}</text></svg>`;
+function spark(vals,w,h){
+  let mx=1e-6; for(const v of vals){const a=Math.abs(v); if(a>mx)mx=a;}
+  const n=vals.length, yy=v=>h/2-(h/2-3)*Math.max(-1,Math.min(1,v/mx)), xx=i=>w*i/Math.max(1,n-1);
+  let pts=''; for(let i=0;i<n;i++) pts+=`${xx(i).toFixed(1)},${yy(vals[i]).toFixed(1)} `;
+  return `<svg class="spk" viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none">`
+    +`<line x1="0" y1="${h/2}" x2="${w}" y2="${h/2}" stroke="#ccc" stroke-width="1"/>`
+    +`<polyline points="${pts}" fill="none" stroke="#ff5d8f" stroke-width="1.4"/>`
+    +`<line class="cross" x1="-2" y1="0" x2="-2" y2="${h}" stroke="#0a0a0a" stroke-width="1"/></svg>`;
 }
 function buildPanels(tx){
   const nb=(D.neighbors&&D.neighbors[state.emo])||[];
   const list=[state.emo].concat(nb.filter(x=>x!==state.emo)).slice(0,7);
-  let html=`<div class="ph">Emotion distribution &middot; ${state.mode} &middot; <span style="font-weight:400;text-transform:none;opacity:.7">hover a panel &rarr; jump to its peak in the transcript</span></div>`;
+  let html=`<div class="ph">Emotion activation across the rollout &middot; ${state.mode} &middot; <span style="font-weight:400;text-transform:none;opacity:.7">hover a panel &rarr; jump to that spot in the transcript</span></div>`;
   for(const em of list){
     const e=emoIdx[em]; if(e===undefined) continue;
     const vals=new Array(tx.T); let s=0; for(let i=0;i<tx.T;i++){const v=val(tx,i,e); vals[i]=v; s+=v;}
-    const mean=s/tx.T;
-    html+=`<div class="pan${em===state.emo?' sel':''}" data-em="${em}"><div class="panh">${em} <span style="float:right;opacity:.65">&mu; ${mean.toFixed(3)}</span></div>${hist(vals,300,50)}</div>`;
+    html+=`<div class="pan${em===state.emo?' sel':''}" data-em="${em}"><div class="panh">${em} <span style="float:right;opacity:.65">&mu; ${(s/tx.T).toFixed(3)}</span></div>${spark(vals,300,42)}</div>`;
   }
   $('#panels').innerHTML=html;
   const cont=$('#tx');
+  const clearHi=()=>{cont.querySelectorAll('.tok.hl,.tok.hlpk').forEach(t=>t.classList.remove('hl','hlpk')); $('#panels').querySelectorAll('.cross').forEach(c=>{c.setAttribute('x1',-2);c.setAttribute('x2',-2);});};
   $('#panels').querySelectorAll('.pan').forEach(el=>{
     el.onclick=()=>{state.emo=el.dataset.em; const sel=$('#emo'); if(sel) sel.value=state.emo; render();};
-    el.onmouseenter=()=>{
-      const e=emoIdx[el.dataset.em]; if(e===undefined) return;
-      const order=Array.from({length:tx.T},(_,i)=>i).sort((a,b)=>val(tx,b,e)-val(tx,a,e)).slice(0,8);
-      order.forEach((i,r)=>{const t=cont.querySelector('.tok[data-i="'+i+'"]'); if(t) t.classList.add(r===0?'hlpk':'hl');});
-      const pk=cont.querySelector('.tok[data-i="'+order[0]+'"]');
-      if(pk){const r=pk.getBoundingClientRect(),cr=cont.getBoundingClientRect(); cont.scrollTop += (r.top-cr.top)-cont.clientHeight/2+r.height/2;}
+    const svg=el.querySelector('svg.spk');
+    el.onmousemove=ev=>{
+      const r=svg.getBoundingClientRect(); const f=Math.max(0,Math.min(1,(ev.clientX-r.left)/r.width)); const i=Math.round(f*(tx.T-1));
+      clearHi();
+      $('#panels').querySelectorAll('.cross').forEach(c=>{c.setAttribute('x1',(f*300).toFixed(1)); c.setAttribute('x2',(f*300).toFixed(1));});
+      for(let j=Math.max(0,i-2);j<=Math.min(tx.T-1,i+2);j++){const t=cont.querySelector('.tok[data-i="'+j+'"]'); if(t) t.classList.add(j===i?'hlpk':'hl');}
+      const pk=cont.querySelector('.tok[data-i="'+i+'"]');
+      if(pk){const rr=pk.getBoundingClientRect(),cr=cont.getBoundingClientRect(); if(rr.top<cr.top||rr.bottom>cr.bottom) cont.scrollTop += (rr.top-cr.top)-cont.clientHeight/2;}
     };
-    el.onmouseleave=()=>{cont.querySelectorAll('.tok.hl,.tok.hlpk').forEach(t=>t.classList.remove('hl','hlpk'));};
+    el.onmouseleave=clearHi;
   });
 }
 
