@@ -51,6 +51,7 @@ transformer-circuits "Transcript Visualizations" idea on our four behaviors. Eac
 </div>
 <div class="note"><b>Centering:</b> color shows what's genuinely elevated here, not each emotion's fixed offset. Toggle for the other modes.</div>
 <div id="tldr" class="note" style="border-color:var(--ac3);background:#eefcff;font-size:13.5px"></div>
+<div id="story" class="note" style="border-color:#7b2ff7;background:#f3eeff;font-size:13.5px"></div>
 <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
   <div id="tx" style="flex:1 1 540px"></div>
   <div id="panels" style="flex:1 1 300px;max-width:360px"></div>
@@ -136,6 +137,7 @@ async function render(){
   drawTrace(tx,e,scale);
   buildPanels(tx);
   $('#tldr').innerHTML = tx.tldr ? `<b>Opus-4.8 TLDR &middot; ${tx.label||tx.cls}:</b> ${tx.tldr}` : '';
+  const st=tx.story; $('#story').innerHTML = (st&&st.headline) ? `<b>Activation story${st.has_story?'':' (weak / none)'} &middot; ${st.headline}:</b> ${st.story}` : '';
   $('#scaleNote').textContent = `color scale ±${scale.toFixed(3)} (96th pct) · ${state.mode} · emotion "${state.emo}"`;
 }
 function spark(vals,w,h){
